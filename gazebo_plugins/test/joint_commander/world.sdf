@@ -117,7 +117,6 @@
         <robotNamespace>test</robotNamespace>
         <jointSet1>joint_name_1</jointSet1>
         <jointSet1Joint1>first_second_joint</jointSet1Joint1>
-        <updateRate>100.0</updateRate>
       </plugin> 
     </model>
     <gui fullscreen='0'>

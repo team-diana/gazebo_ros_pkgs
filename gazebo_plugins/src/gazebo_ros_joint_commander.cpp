@@ -38,6 +38,7 @@
 #include <assert.h>
 
 #include <gazebo_plugins/gazebo_ros_joint_commander.h>
+#include <gazebo_plugins/gazebo_ros_utils.h>
 
 #include <gazebo/math/gzmath.hh>
 #include <sdf/sdf.hh>
@@ -59,19 +60,6 @@ namespace gazebo {
     RIGHT_REAR=2,
     LEFT_REAR=3,
   };
-
-  void ros_info(const std::string& msg) {
-    ROS_INFO(msg.c_str());
-  }
-  void ros_warn(const std::string& msg) {
-    ROS_WARN(msg.c_str());
-  }
-  void ros_error(const std::string& msg) {
-    ROS_ERROR(msg.c_str());
-  }
-   void ros_fatal(const std::string& msg) {
-    ROS_FATAL(msg.c_str());
-  }
 
   const std::string GazeboRosJointCommander::PLUGIN_NAME = "GazeboRosJointCommander";
 

@@ -66,11 +66,6 @@ namespace gazebo {
   class Joint;
   class Entity;
 
-  void ros_info(const std::string& msg);
-  void ros_warn(const std::string& msg);
-  void ros_error(const std::string& msg);
-  void ros_fatal(const std::string& msg);
-
   class JointSet {
     public:
       JointSet(std::string name, std::vector<physics::JointPtr> joints) :

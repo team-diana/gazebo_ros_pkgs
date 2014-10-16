@@ -283,6 +283,11 @@ public:
     }
 };
 
+void ros_info(const std::string& msg);
+void ros_warn(const std::string& msg);
+void ros_error(const std::string& msg);
+void ros_fatal(const std::string& msg);
+
 typedef boost::shared_ptr<GazeboRos> GazeboRosPtr;
 }
 #endif
