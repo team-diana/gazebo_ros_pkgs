@@ -150,16 +150,3 @@ void GazeboRos::isInitialized() {
         return;
     }
 }
-
-void ros_info(const std::string& msg) {
-  ROS_INFO(msg.c_str());
-}
-void ros_warn(const std::string& msg) {
-  ROS_WARN(msg.c_str());
-}
-void ros_error(const std::string& msg) {
-  ROS_ERROR(msg.c_str());
-}
-  void ros_fatal(const std::string& msg) {
-  ROS_FATAL(msg.c_str());
-}

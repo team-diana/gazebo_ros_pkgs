@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(gazebo_plugins)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++14 ${CMAKE_CXX_FLAGS}")
 
 find_package(catkin REQUIRED COMPONENTS
   message_generation
@@ -27,6 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
   polled_camera
   diagnostic_updater
   camera_info_manager
+  team_diana_lib
 )
 
 include (FindPkgConfig)
@@ -122,6 +123,7 @@ catkin_package(
   image_transport
   rosconsole
   camera_info_manager
+  team_diana_lib
   DEPENDS
     gazebo
     SDF

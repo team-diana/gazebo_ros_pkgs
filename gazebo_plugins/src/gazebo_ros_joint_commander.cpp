@@ -52,7 +52,11 @@
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include <team_diana_lib/logging/logging.h>
+
 namespace gazebo {
+
+  using namespace Td;
 
   enum {
     RIGHT_FRONT=0,

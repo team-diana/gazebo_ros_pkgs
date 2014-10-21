@@ -36,6 +36,8 @@
 #include <map>
 #include <boost/algorithm/string.hpp>
 
+#include <team_diana_lib/logging/logging.h>
+
 #include <gazebo/common/common.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/sensors/Sensor.hh>
@@ -71,7 +73,7 @@ inline std::string GetModelName ( const sensors::SensorPtr &parent )
 * @param pInfo
 * @return node namespace
 **/
-inline std::string GetRobotNamespace ( const sensors::SensorPtr &parent, const sdf::ElementPtr &sdf, const char *pInfo = NULL )
+inline std::string GetRobotNamespace (const sensors::SensorPtr &parent, const sdf::ElementPtr &sdf, const char *pInfo = NULL )
 {
     std::string name_space;
     std::stringstream ss;
@@ -90,6 +92,35 @@ inline std::string GetRobotNamespace ( const sensors::SensorPtr &parent, const s
         ROS_INFO ( "%s Plugin (robotNamespace = %s), Info: %s" , pInfo, name_space.c_str(), ss.str().c_str() );
     }
     return name_space;
+}
+
+template<typename T> const T GetValueFromElementImpl(const sdf::ElementPtr& sdf, const std::string& element_name, const T* default_value) {
+  if (!sdf->HasElement(element_name)) {
+    if(default_value == nullptr) {
+      std::string msg = "Unable to find element \"" + element_name + "\"";
+      Td::ros_fatal(msg);
+      throw new std::invalid_argument(msg);
+    } else {
+      return *default_value;
+    }
+  } else {
+    return sdf->GetElement(element_name)->Get<T>();
+  }
+}
+
+template<typename T> T GetValueFromElement(const sdf::ElementPtr& sdf, const std::string& element_name, const T& default_value) {
+  return GetValueFromElementImpl<T>(sdf, element_name, &default_value );
+}
+
+
+template<typename T> T GetValueFromElement(const sdf::ElementPtr& sdf, const std::string& element_name) {
+  return GetValueFromElementImpl<T>(sdf, element_name, static_cast<T*>(nullptr) );
+}
+
+physics::JointPtr GetReferencedJoint(physics::ModelPtr model, const sdf::ElementPtr& sdf, std::string sdf_element_name) {
+  std::string joint_name = GetValueFromElement<std::string>(sdf, sdf_element_name);
+  Td::ros_info("joint name is " + joint_name);
+  return model->GetJoint(joint_name);
 }
 
 /**
@@ -283,12 +314,8 @@ public:
     }
 };
 
-void ros_info(const std::string& msg);
-void ros_warn(const std::string& msg);
-void ros_error(const std::string& msg);
-void ros_fatal(const std::string& msg);
-
 typedef boost::shared_ptr<GazeboRos> GazeboRosPtr;
+
 }
 #endif
 
