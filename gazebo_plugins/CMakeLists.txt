@@ -82,6 +82,7 @@ catkin_package(
   gazebo_ros_openni_kinect
   gazebo_ros_gpu_laser
   gazebo_ros_laser
+  gazebo_ros_range_finder
   gazebo_ros_block_laser
   gazebo_ros_p3d
   gazebo_ros_imu
@@ -184,6 +185,9 @@ target_link_libraries(gazebo_ros_gpu_laser ${catkin_LIBRARIES} ${GAZEBO_LIBRARIE
 add_library(gazebo_ros_laser src/gazebo_ros_laser.cpp)
 target_link_libraries(gazebo_ros_laser ${GAZEBO_LIBRARIES} RayPlugin ${catkin_LIBRARIES})
 
+add_library(gazebo_ros_range_finder src/gazebo_ros_range_finder.cpp)
+target_link_libraries(gazebo_ros_range_finder ${GAZEBO_LIBRARIES} RayPlugin ${catkin_LIBRARIES})
+
 add_library(gazebo_ros_block_laser src/gazebo_ros_block_laser.cpp)
 target_link_libraries(gazebo_ros_block_laser ${GAZEBO_LIBRARIES} RayPlugin ${catkin_LIBRARIES})
 
@@ -272,6 +276,7 @@ install(TARGETS
   gazebo_ros_openni_kinect
   gazebo_ros_openni_kinect
   gazebo_ros_laser
+  gazebo_ros_range_finder
   gazebo_ros_block_laser
   gazebo_ros_p3d
   gazebo_ros_imu
