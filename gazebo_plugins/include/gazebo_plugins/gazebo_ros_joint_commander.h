@@ -37,8 +37,6 @@
 #ifndef GAZEBO_ROS_JOINT_COMMANDER_H_
 #define GAZEBO_ROS_JOINT_COMMANDER_H_
 
-#include <map>
-
 #include <gazebo/common/common.hh>
 #include <gazebo/physics/physics.hh>
 
@@ -46,9 +44,6 @@
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
-#include <geometry_msgs/Twist.h>
-#include <nav_msgs/Odometry.h>
-#include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/JointState.h>
 
 // Custom Callback Queue
@@ -58,6 +53,8 @@
 // Boost
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+
+#include <memory>
 
 #include <ros/ros.h>
 
@@ -85,16 +82,16 @@ namespace gazebo {
 
   class ControlledJointSet {
     public:
-    ControlledJointSet(JointSet* joint_set)
+    ControlledJointSet(std::shared_ptr<JointSet> joint_set)
     : joint_set(joint_set)  {}
 
     ~ControlledJointSet() {
-      delete joint_set;
+      joint_set;
     }
 
     void cmdPositionCallback(const sensor_msgs::JointState::ConstPtr& cmd_msg);
 
-    JointSet* joint_set;
+    std::shared_ptr<JointSet> joint_set;
     ros::Subscriber rosSubscriber;
   };
 
@@ -104,7 +101,7 @@ namespace gazebo {
 	  GazeboRosJointCommander();
     ~GazeboRosJointCommander();
     void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
-    JointSet* LoadJointSet(sdf::ElementPtr _sdf, int index);
+    std::shared_ptr<JointSet> LoadJointSet(sdf::ElementPtr _sdf, int index);
 
     static const std::string PLUGIN_NAME;
 
@@ -117,18 +114,13 @@ namespace gazebo {
 
       physics::WorldPtr world;
       physics::ModelPtr parent;
-//       event::ConnectionPtr update_connection_;
 
-      std::vector<ControlledJointSet*> controlled_joints;
-
-
+      std::vector<std::unique_ptr<ControlledJointSet>> controlled_joints;
       physics::JointPtr joints[4];
 
       // ROS STUFF
-      ros::NodeHandle* rosnode_;
+      std::unique_ptr<ros::NodeHandle> rosnode_;
       ros::Publisher odometry_publisher_;
-      nav_msgs::Odometry odom_;
-      std::string tf_prefix_;
       bool broadcast_tf_;
 
       boost::mutex lock;

@@ -44,8 +44,6 @@
 #include <sdf/sdf.hh>
 
 #include <ros/ros.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/GetMap.h>
 #include <nav_msgs/Odometry.h>
@@ -69,16 +67,11 @@ namespace gazebo {
 
   GazeboRosJointCommander::GazeboRosJointCommander() : alive_(true) {}
 
-  // Destructor
   GazeboRosJointCommander::~GazeboRosJointCommander() {
-    ros_info(" destroying  ");
-    delete rosnode_;
-    for(auto controlled_join : controlled_joints) {
-      delete controlled_join;
-    }
+    Shutdown();
   }
 
-  JointSet* GazeboRosJointCommander::LoadJointSet(sdf::ElementPtr _sdf, int index) {
+  std::shared_ptr<JointSet> GazeboRosJointCommander::LoadJointSet(sdf::ElementPtr _sdf, int index) {
     using namespace std;
     ros_info(" loading joint set");
     sdf::ElementPtr set = _sdf->GetElement("jointSet" + to_string(index));
@@ -104,7 +97,7 @@ namespace gazebo {
       joints.push_back(joint);
     }
 
-    return new JointSet(controlled_joint_name, joints);
+    return std::shared_ptr<JointSet> (new JointSet(controlled_joint_name, joints));
   }
 
 
@@ -118,7 +111,7 @@ namespace gazebo {
     ros_info("starting");
 
     ros_info("searching joint set");
-    std::vector<JointSet*> joint_sets;
+    std::vector<std::shared_ptr<JointSet>> joint_sets;
 
     for(int i = 1; true; i++) {
       if (!_sdf->HasElement("jointSet" + to_string(i))) {
@@ -126,11 +119,11 @@ namespace gazebo {
         break;
       }
       else {
-        JointSet* joint_set = LoadJointSet(_sdf, i);
+        std::shared_ptr<JointSet> joint_set = LoadJointSet(_sdf, i);
         if(joint_set == nullptr) {
            gzthrow("Unable to load the joint set");
         } else {
-          joint_sets.push_back(joint_set);
+          joint_sets.push_back(std::move(joint_set));
         }
       }
     }
@@ -152,56 +145,52 @@ namespace gazebo {
       return;
     }
 
-    rosnode_ = new ros::NodeHandle(this->robot_namespace_);
+    rosnode_ = std::unique_ptr<ros::NodeHandle>(new ros::NodeHandle(this->robot_namespace_));
 
     ros_info("Starting " + PLUGIN_NAME + " (ns = " + robot_namespace_ + " )" );
 
-    ros_info("creating subscribers ");
-
-    for (JointSet* joint_set : joint_sets) {
+    for (std::shared_ptr<JointSet>& joint_set : joint_sets) {
       ros_info("adding subscriber for " +  joint_set->GetName());
-      auto controlled_joint = new ControlledJointSet(joint_set);
+      std::unique_ptr<ControlledJointSet> controlled_joint(new ControlledJointSet(joint_set));
       ros::SubscribeOptions so =
       ros::SubscribeOptions::create<sensor_msgs::JointState>(
           "/" + joint_set->GetName(), 10,
-          boost::bind(&ControlledJointSet::cmdPositionCallback, controlled_joint, _1),
+          boost::bind(&ControlledJointSet::cmdPositionCallback, controlled_joint.get(), _1),
           ros::VoidPtr(), &queue_);
       controlled_joint->rosSubscriber = rosnode_->subscribe(so);
-      controlled_joints.push_back(controlled_joint);
+      controlled_joints.push_back(std::move(controlled_joint));
     }
 
-    // start custom queue for diff drive
     this->callback_queue_thread_ =
       boost::thread(boost::bind(&GazeboRosJointCommander::QueueThread, this));
   }
 
   // Finalize the controller
-  void GazeboRosJointCommander::Shutdown() {
+void GazeboRosJointCommander::Shutdown() {
     ros_info("shutting down");
+
+    for(std::unique_ptr<gazebo::ControlledJointSet>& jointSet : controlled_joints) {
+      jointSet->rosSubscriber.shutdown();
+    }
+
     alive_ = false;
     queue_.clear();
     queue_.disable();
     rosnode_->shutdown();
     callback_queue_thread_.join();
-
-  }
+}
 
 void ControlledJointSet::cmdPositionCallback(const sensor_msgs::JointState::ConstPtr& cmd_msg) {
-    ros_info("in cmd position callback of " + joint_set->GetName());
     const std::vector<physics::JointPtr> joints = joint_set->GetJoints();
 
     for(int i = 0; i < joints.size(); i++) {
       physics::JointPtr joint = joints[i];
-      ros_info("setting position " + std::to_string(cmd_msg->position[i]));
       joint->SetPosition(0, cmd_msg->position[i]);
     }
   }
 
   void GazeboRosJointCommander::QueueThread() {
     static const double timeout = 0.01;
-
-    ros_info("queue thread started. is rosnode ok: " + std::to_string(rosnode_->ok()));
-    ros_info("queue thread started. is alive_ : " + std::to_string(alive_));
     while (alive_ && rosnode_->ok()) {
       queue_.callAvailable(ros::WallDuration(timeout));
     }
