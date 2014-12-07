@@ -191,8 +191,6 @@ void GazeboRosRangeFinder::OnScan(ConstLaserScanStampedPtr &_msg)
 
   auto& ranges = _msg->scan().ranges();
 
-  ros_info(toString("range ", this->topic_name_ , " has " , ranges.size() , " ranges"));
-
   if(ranges.size() > 0) {
     range_msg.range = (float)ranges.Get(0);
   } else {
