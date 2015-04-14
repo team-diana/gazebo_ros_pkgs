@@ -23,7 +23,9 @@ catkin_package(
     controller_manager
     pluginlib
     transmission_interface
+    urdf
   INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME} default_robot_hw_sim
   DEPENDS gazebo
 )
 
