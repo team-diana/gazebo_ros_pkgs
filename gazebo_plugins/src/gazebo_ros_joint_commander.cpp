@@ -73,7 +73,6 @@ namespace gazebo {
 
   std::shared_ptr<JointSet> GazeboRosJointCommander::LoadJointSet(sdf::ElementPtr _sdf, int index) {
     using namespace std;
-    ros_info(" loading joint set");
     sdf::ElementPtr set = _sdf->GetElement("jointSet" + to_string(index));
     std::string controlled_joint_name = set->Get<std::string>();
     std::vector<physics::JointPtr> joints;
@@ -81,11 +80,9 @@ namespace gazebo {
     for(int i = 1; true; i++) {
       using namespace std;
       std::string joint_element = "jointSet" + to_string(index) + "Joint" + to_string(i);
-      ros_info(" searching " + joint_element);
       if(!_sdf->HasElement(joint_element))
         break;
       std::string joint_name = _sdf->GetElement(joint_element)->Get<std::string>();
-      ros_info(" found " + joint_element + " getting real joint ");
       physics::JointPtr joint = parent->GetJoint(joint_name);
 
       if(!joint) {
@@ -93,7 +90,6 @@ namespace gazebo {
         return nullptr;
       }
 
-      ros_info(" adding " + joint_element );
       joints.push_back(joint);
     }
 
@@ -108,14 +104,11 @@ namespace gazebo {
     this->parent = _parent;
     this->world = _parent->GetWorld();
 
-    ros_info("starting");
 
-    ros_info("searching joint set");
     std::vector<std::shared_ptr<JointSet>> joint_sets;
 
     for(int i = 1; true; i++) {
       if (!_sdf->HasElement("jointSet" + to_string(i))) {
-        ros_info(" joint set finished");
         break;
       }
       else {
@@ -129,7 +122,6 @@ namespace gazebo {
     }
 
     this->robot_namespace_ = "";
-    ros_info("searching namespace");
     if (!_sdf->HasElement("robotNamespace")) {
       ros_info(PLUGIN_NAME + "Plugin missing <robotNamespace>, defaults to " + this->robot_namespace_);
     } else {
@@ -147,10 +139,7 @@ namespace gazebo {
 
     rosnode_ = std::unique_ptr<ros::NodeHandle>(new ros::NodeHandle(this->robot_namespace_));
 
-    ros_info("Starting " + PLUGIN_NAME + " (ns = " + robot_namespace_ + " )" );
-
     for (std::shared_ptr<JointSet>& joint_set : joint_sets) {
-      ros_info("adding subscriber for " +  joint_set->GetName());
       std::unique_ptr<ControlledJointSet> controlled_joint(new ControlledJointSet(joint_set));
       ros::SubscribeOptions so =
       ros::SubscribeOptions::create<sensor_msgs::JointState>(
@@ -167,7 +156,6 @@ namespace gazebo {
 
   // Finalize the controller
 void GazeboRosJointCommander::Shutdown() {
-    ros_info("shutting down");
 
     for(std::unique_ptr<gazebo::ControlledJointSet>& jointSet : controlled_joints) {
       jointSet->rosSubscriber.shutdown();
