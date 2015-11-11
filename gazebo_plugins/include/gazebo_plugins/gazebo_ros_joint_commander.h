@@ -65,15 +65,23 @@ namespace gazebo {
 
   class JointSet {
     public:
-      JointSet(std::string name, std::vector<physics::JointPtr> joints) :
+      JointSet(bool instantaneous, std::string name, std::vector<physics::JointPtr> joints, std::vector<double> jointSpeeds) :
+      instantaneous(instantaneous),
+      jointSpeeds(jointSpeeds),
       name(name),
       joints(joints)
-      {}
+      {
+        targetPositions.resize(joints.size());
+        std::fill(targetPositions.begin(), targetPositions.end(), 0);
+      }
 
       int GetDof() { return joints.size(); }
       const std::string& GetName() { return name; }
       physics::JointPtr GetJoint(int index) { return joints[index]; }
       const std::vector<physics::JointPtr>& GetJoints() { return joints; }
+      std::vector<double> jointSpeeds;
+      std::vector<double> targetPositions;
+      bool instantaneous;
 
     private:
       std::string name;
@@ -83,16 +91,19 @@ namespace gazebo {
   class ControlledJointSet {
     public:
     ControlledJointSet(std::shared_ptr<JointSet> joint_set)
-    : joint_set(joint_set)  {}
+    : joint_set(joint_set) {}
 
     ~ControlledJointSet() {
       joint_set;
     }
 
+    void update(double time_delta);
+    void publish(double time);
     void cmdPositionCallback(const sensor_msgs::JointState::ConstPtr& cmd_msg);
 
     std::shared_ptr<JointSet> joint_set;
     ros::Subscriber rosSubscriber;
+    ros::Publisher rosPublisher;
   };
 
   class GazeboRosJointCommander : public ModelPlugin {
@@ -103,14 +114,14 @@ namespace gazebo {
     void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
     std::shared_ptr<JointSet> LoadJointSet(sdf::ElementPtr _sdf, int index);
 
+    void virtual UpdateChild();
+
     static const std::string PLUGIN_NAME;
 
     protected:
       void Shutdown();
 
     private:
-      void publishOdometry(double step_time);
-      void getWheelVelocities();
 
       physics::WorldPtr world;
       physics::ModelPtr parent;
@@ -120,7 +131,6 @@ namespace gazebo {
 
       // ROS STUFF
       std::unique_ptr<ros::NodeHandle> rosnode_;
-      ros::Publisher odometry_publisher_;
       bool broadcast_tf_;
 
       boost::mutex lock;
@@ -134,6 +144,7 @@ namespace gazebo {
       // Custom Callback Queue
       ros::CallbackQueue queue_;
       boost::thread callback_queue_thread_;
+      event::ConnectionPtr updateConnection;
       void QueueThread();
 
 
@@ -145,6 +156,7 @@ namespace gazebo {
       double update_rate_;
       double update_period_;
       common::Time last_update_time_;
+      common::Time last_publish_time_;
 
   };
 
